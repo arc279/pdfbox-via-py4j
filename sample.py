@@ -3,7 +3,7 @@ import time
 import subprocess
 from subprocess import Popen
 
-from py4j.java_gateway import JavaGateway
+from py4j.java_gateway import JavaGateway, Py4JNetworkError
 
 try:
     cmd = "java -jar J4Py.jar"
@@ -12,14 +12,16 @@ try:
 
     gateway = JavaGateway()
 
+    assert proc.poll() is None
+
     while True:
         try:
-            # ping 的な処理ないのかな
-            print(gateway.jvm.org.kuryu.PDFExtractText, file=sys.stderr)
+            # ping 的な処理
+            gateway._gateway_client._get_connection()
             break
-        except Exception as e:
+        except Py4JNetworkError as e:
+            print(e, file=sys.stderr)
             time.sleep(1)
-            print("waiting for jvm is ready", file=sys.stderr)
 
     ex = gateway.jvm.org.kuryu.PDFExtractText
 
@@ -29,3 +31,7 @@ try:
     print(text)
 finally:
     proc.terminate()
+
+proc.wait()
+
+assert proc.poll() is not None
